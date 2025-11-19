@@ -1,4 +1,5 @@
 import express, { Request, Response, Router } from "express";
+import { MY_USER_ID } from "../..";
 import { usersRef } from "../../firebase/firebase";
 import { hasSession } from "../../middleware";
 import { ResponseHandler } from "../../services";
@@ -7,7 +8,7 @@ const userRouter: Router = express.Router();
 
 userRouter.get("/", hasSession, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     // retrieve user from db
     const userRef = usersRef.child(userId);
     await userRef.once(
@@ -28,27 +29,26 @@ userRouter.get("/", hasSession, async (req: Request, res: Response) => {
       },
       (err) => {
         if (err) {
-          console.log(
-            `There was an error retrieving user data. See below\n ${err}`
+          console.error(
+            `There was an error retrieving user data. See below\n ${err}`,
           );
           ResponseHandler.serverError(
             res,
-            "There was a problem retrieving your data. Please try again."
+            "There was a problem retrieving your data. Please try again.",
           );
         }
-      }
+      },
     );
   } catch (err) {
     // TODO: log to logging service
-    console.log(
-      `There was an error accessing GET user endpoint. see below\n ${err}`
+    console.error(
+      `There was an error accessing GET user endpoint. see below\n ${err}`,
     );
     ResponseHandler.serverError(
       res,
-      "There was a problem retrieving your data. Please try again."
+      "There was a problem retrieving your data. Please try again.",
     );
   }
 });
 
 export { userRouter };
-

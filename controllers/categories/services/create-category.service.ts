@@ -2,16 +2,17 @@ import { Request, Response } from "express";
 import { Reference } from "@firebase/database-types";
 import { ResponseHandler } from "../../../services";
 import { CreateCategoryDto } from "../dto";
+import { MY_USER_ID } from "../../..";
 // require nanoid cause of typescript wahala
 const nanoid = require("nanoid");
 
 export async function createCategory(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     // retrieve user from db
     const categoryRef = usersRef.child(userId).child("categories");
     // request body should contain name, description, image link (user will upload to firestore from FE), and object of tweet IDs.
@@ -32,10 +33,10 @@ export async function createCategory(
           return ResponseHandler.clientError(
             res,
             "Error creating category",
-            409
+            409,
           );
         }
-      }
+      },
     );
     await categoryRef.child(categoryId!).once(
       "value",
@@ -50,23 +51,22 @@ export async function createCategory(
       (errObject) => {
         // TODO: log to logging service
         console.log(
-          `error retrieving the new category \n ${errObject.name} : ${errObject.message}`
+          `error retrieving the new category \n ${errObject.name} : ${errObject.message}`,
         );
         return ResponseHandler.clientError(
           res,
           "Error retrieving the new category",
-          409
+          409,
         );
-      }
+      },
     );
   } catch (err) {
     console.log(
-      `Error accessing create category endpoint. see below: \n ${err}`
+      `Error accessing create category endpoint. see below: \n ${err}`,
     );
     return ResponseHandler.serverError(
       res,
-      "Error creating category. Please try again."
+      "Error creating category. Please try again.",
     );
   }
 }
-

@@ -6,6 +6,7 @@ interface User {
   refreshToken: string;
   tokenExpiresIn: number;
   verified: boolean;
+  bookmarks: Bookmark[];
 }
 
 interface Bookmarks {

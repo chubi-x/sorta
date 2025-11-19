@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Reference } from "@firebase/database-types";
 import { ResponseHandler } from "../../../services";
+import { MY_USER_ID } from "../../..";
 
 // Error messages
 const NOBOOKMARK_ERROR = { message: "Bookmark does not exist" };
@@ -9,11 +10,11 @@ const FIREBASE_ERROR = { message: "Error removing bookmark" };
 export async function deleteBookmarksFromCategory(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
     // user must have a session
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const categoryId = req.params.categoryId;
     const bookmarksToDelete: string[] = req.body.bookmarkIdsToDelete;
     // get a ref to the bookmarks object
@@ -26,7 +27,13 @@ export async function deleteBookmarksFromCategory(
           await bookmarksRef.once(
             "value",
             (bookmarksSnapshot) => {
-              if (bookmarksSnapshot.exists()) {
+              if (!bookmarksSnapshot.exists()) {
+                return ResponseHandler.clientError(
+                  res,
+                  "No bookmarks in this category.",
+                  404,
+                );
+              } else {
                 // flag to track errors
                 let ERROR_FLAG = false;
                 bookmarksToDelete.forEach(async (bookmarkId) => {
@@ -36,7 +43,7 @@ export async function deleteBookmarksFromCategory(
                         if (err) {
                           // TODO: log to logging service
                           console.log(
-                            `Error removing bookmark see description below: \n ${err}`
+                            `Error removing bookmark see description below: \n ${err}`,
                           );
                           ERROR_FLAG = true;
                           throw FIREBASE_ERROR;
@@ -50,12 +57,12 @@ export async function deleteBookmarksFromCategory(
                     if (err === NOBOOKMARK_ERROR) {
                       return ResponseHandler.clientError(
                         res,
-                        "One or more of these bookmarks do not exist."
+                        "Bookmark does not exist",
                       );
                     } else if (err === FIREBASE_ERROR) {
                       return ResponseHandler.serverError(
                         res,
-                        "There was an error removing this bookmark. please try again."
+                        "There was an error removing this bookmark. please try again.",
                       );
                     }
                   }
@@ -67,24 +74,18 @@ export async function deleteBookmarksFromCategory(
                     message: "Bookmarks deleted successfully",
                   });
                 }
-              } else {
-                return ResponseHandler.clientError(
-                  res,
-                  "No bookmarks in this category.",
-                  404
-                );
               }
             },
             (errorObject) => {
               // TODO: log to logging service
               console.log(
-                `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`
+                `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`,
               );
               return ResponseHandler.serverError(
                 res,
-                "There was an error accessing your bookmarks"
+                "There was an error accessing your bookmarks",
               );
-            }
+            },
           );
         } else {
           return ResponseHandler.clientError(res, "Category does not exist.");
@@ -95,8 +96,7 @@ export async function deleteBookmarksFromCategory(
     console.log(`Error adding bookmarks to category, see below : \n ${err}`);
     return ResponseHandler.clientError(
       res,
-      "Error adding bookmarks to category"
+      "Error adding bookmarks to category",
     );
   }
 }
-

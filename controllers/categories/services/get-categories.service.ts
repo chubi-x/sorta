@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { Reference, DataSnapshot } from "@firebase/database-types";
 import { ResponseHandler } from "../../../services";
+import { MY_USER_ID } from "../../..";
 
 async function readBookmarks(
   categorySnapshot: DataSnapshot,
   bookmarksRef: Reference,
-  categoriesArray: any[]
+  categoriesArray: any[],
 ) {
   const bookmarksArray: string[] = [];
   const categoryId = categorySnapshot.ref.key;
@@ -20,9 +21,9 @@ async function readBookmarks(
     (errorObject) => {
       // TODO: log to logging service
       console.log(
-        `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`
+        `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`,
       );
-    }
+    },
   );
   categoriesArray.push({
     ...{ id: categoryId, ...categorySnapshot.val() },
@@ -32,10 +33,10 @@ async function readBookmarks(
 export async function getCategories(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const categoriesArray: any[] = [];
     // get a ref to user's bookmarks
     const bookmarksRef = usersRef.child(`${userId}/bookmarks`);
@@ -50,7 +51,7 @@ export async function getCategories(
         // async function to read bookmarks ref
         categoriesSnapshot.forEach((categorySnapshot) => {
           promiseList.push(
-            readBookmarks(categorySnapshot, bookmarksRef, categoriesArray)
+            readBookmarks(categorySnapshot, bookmarksRef, categoriesArray),
           );
         });
         // fulfill promises
@@ -64,21 +65,21 @@ export async function getCategories(
       (errorObject) => {
         // TODO: log to logging service
         console.log(
-          `error accessing categories \n ${errorObject.name} : ${errorObject.message}`
+          `error accessing categories \n ${errorObject.name} : ${errorObject.message}`,
         );
         return ResponseHandler.serverError(
           res,
-          "There was an error accessing your categories"
+          "There was an error accessing your categories",
         );
-      }
+      },
     );
   } catch (err) {
     console.log(
-      `There was an error accessing get categories endpoint. see error below \n ${err}`
+      `There was an error accessing get categories endpoint. see error below \n ${err}`,
     );
     return ResponseHandler.serverError(
       res,
-      "There was an error accessing your categories"
+      "There was an error accessing your categories",
     );
   }
 }
@@ -86,10 +87,10 @@ export async function getCategories(
 export async function getCategoryById(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const categoryId = req.params.categoryId;
     const categoryRef = usersRef.child(`${userId}/categories/${categoryId}`);
     const bookmarksRef = usersRef.child(`${userId}/bookmarks`);
@@ -106,9 +107,9 @@ export async function getCategoryById(
       (errorObject) => {
         // TODO: log to logging service
         console.log(
-          `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`
+          `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`,
         );
-      }
+      },
     );
     categoryRef.once(
       "value",
@@ -124,16 +125,15 @@ export async function getCategoryById(
       },
       (err) => {
         console.log(
-          `There was an error getting category ref in /categories/:categoryId. see error below \n ${err}`
+          `There was an error getting category ref in /categories/:categoryId. see error below \n ${err}`,
         );
         return ResponseHandler.serverError(res, "Error retrieving category");
-      }
+      },
     );
   } catch (err) {
     console.log(
-      `There was an error accessing get categories by id endpoint. see error below \n ${err}`
+      `There was an error accessing get categories by id endpoint. see error below \n ${err}`,
     );
     return ResponseHandler.serverError(res, "Error retrieving category");
   }
 }
-

@@ -3,14 +3,15 @@ import { Reference } from "@firebase/database-types";
 import { ResponseHandler } from "../../../services";
 import { CreateCategoryDto, UpdateCategoryAttributesDto } from "../dto";
 import { cloudStorageBucket } from "../../../firebase/firebase";
+import { MY_USER_ID } from "../../..";
 
 export async function updateCategoryAttributes(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const categoryId = req.params.categoryId;
     const categoryRef = usersRef.child(`${userId}/categories/${categoryId}`);
 
@@ -25,7 +26,7 @@ export async function updateCategoryAttributes(
           updateObject.name = name;
           // change the location of the image file in cloud storage
           const imageFile = cloudStorageBucket.file(
-            `images/${userId}/categories/${category.name}/image`
+            `images/${userId}/categories/${category.name}/image`,
           );
 
           const existsArray = await imageFile.exists();
@@ -52,11 +53,11 @@ export async function updateCategoryAttributes(
             if (err) {
               // TODO: log error to logging service
               console.log(
-                `Firebase error \n Error updating category. see below \n ${err}`
+                `Firebase error \n Error updating category. see below \n ${err}`,
               );
               return ResponseHandler.clientError(
                 res,
-                "Error updating category"
+                "Error updating category",
               );
             }
           });
@@ -67,7 +68,7 @@ export async function updateCategoryAttributes(
         } else {
           return ResponseHandler.clientError(
             res,
-            "You did not specify an attribute to change."
+            "You did not specify an attribute to change.",
           );
         }
       } else {
@@ -77,12 +78,11 @@ export async function updateCategoryAttributes(
   } catch (err) {
     // TODO: log to logging service
     console.log(
-      `Error accessing update category endpoint. see below: \n ${err}`
+      `Error accessing update category endpoint. see below: \n ${err}`,
     );
     return ResponseHandler.clientError(
       res,
-      "Error updating category. Please try again."
+      "Error updating category. Please try again.",
     );
   }
 }
-

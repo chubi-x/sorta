@@ -1,14 +1,15 @@
 import { Request, Response } from "express";
 import { Reference } from "@firebase/database-types";
 import { ResponseHandler } from "../../../services";
+import { MY_USER_ID } from "../../..";
 export async function addBookmarksToCategory(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
     // user must have a session
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const categoryId = req.params.categoryId;
     const bookmarksToUpdate: Bookmark[] = req.body.bookmarks;
     // get a ref to the bookmarks object
@@ -35,19 +36,20 @@ export async function addBookmarksToCategory(
                       {
                         categoryId,
                         ...bookmark,
+                        firebaseId: bookmarkRefKey,
                       },
                       (err) => {
                         if (err) {
                           // TODO: log to logging service
                           console.log(
-                            `Error creating bookmarks in category. see below: \n ${err}`
+                            `Error creating bookmarks in category. see below: \n ${err}`,
                           );
                           return ResponseHandler.clientError(
                             res,
-                            "Error creating bookmarks in category"
+                            "Error creating bookmarks in category",
                           );
                         }
-                      }
+                      },
                     );
                   }
                 });
@@ -62,13 +64,13 @@ export async function addBookmarksToCategory(
             (errorObject) => {
               // TODO: log to logging service
               console.log(
-                `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`
+                `error accessing bookmarks \n ${errorObject.name} : ${errorObject.message}`,
               );
               return ResponseHandler.serverError(
                 res,
-                "There was an error accessing your bookmark"
+                "There was an error accessing your bookmark",
               );
-            }
+            },
           );
         } else {
           return ResponseHandler.clientError(res, "Category does not exist.");
@@ -79,8 +81,7 @@ export async function addBookmarksToCategory(
     console.log(`Error adding bookmarks to category, see below : \n ${err}`);
     return ResponseHandler.clientError(
       res,
-      "Error adding bookmarks to category"
+      "Error adding bookmarks to category",
     );
   }
 }
-

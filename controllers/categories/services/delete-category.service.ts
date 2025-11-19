@@ -3,16 +3,17 @@ import { Reference, DataSnapshot } from "@firebase/database-types";
 import { ResponseHandler } from "../../../services";
 import { cloudStorageBucket } from "../../../firebase/firebase";
 import { CreateCategoryDto } from "../dto";
+import { MY_USER_ID } from "../../..";
 
 export async function deleteCategory(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
     // list of bookmark removal promises
     const bookmarkRemovalPromiseList: Promise<any>[] = [];
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const categoryId = req.params.categoryId;
     // get a ref to the specified category and remove it
     const categoryRef = usersRef.child(`${userId}/categories/${categoryId}`);
@@ -23,11 +24,11 @@ export async function deleteCategory(
           // TODO: log to logging service
           if (err) {
             console.log(
-              `Error deleting category bookmarks. see details below: \n ${err}`
+              `Error deleting category bookmarks. see details below: \n ${err}`,
             );
             return ResponseHandler.serverError(
               res,
-              "Error deleting category bookmarks. Please try again."
+              "Error deleting category bookmarks. Please try again.",
             );
           }
         });
@@ -40,7 +41,7 @@ export async function deleteCategory(
         try {
           // delete the image from storage
           const file = cloudStorageBucket.file(
-            `images/${userId}/categories/${categoryName}/image`
+            `images/${userId}/categories/${categoryName}/image`,
           );
           const existsArray = await file.exists();
           if (existsArray[0]) {
@@ -50,7 +51,7 @@ export async function deleteCategory(
           console.log(e);
           return ResponseHandler.clientError(
             res,
-            "Error deleting category image"
+            "Error deleting category image",
           );
         }
         // remove the category
@@ -58,11 +59,11 @@ export async function deleteCategory(
           // TODO: log to logging service
           if (err) {
             console.log(
-              `Error deleting category. see details below: \n ${err}`
+              `Error deleting category. see details below: \n ${err}`,
             );
             return ResponseHandler.serverError(
               res,
-              "Error deleting category. Please try again."
+              "Error deleting category. Please try again.",
             );
           }
         });
@@ -88,12 +89,11 @@ export async function deleteCategory(
     });
   } catch (err) {
     console.log(
-      `There was an error accessing delete categories endpoint. see full error below: \n ${err}`
+      `There was an error accessing delete categories endpoint. see full error below: \n ${err}`,
     );
     return ResponseHandler.clientError(
       res,
-      "Error deleting category. Please try again."
+      "Error deleting category. Please try again.",
     );
   }
 }
-

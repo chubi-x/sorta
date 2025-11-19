@@ -9,6 +9,8 @@ import {
 import { Reference } from "@firebase/database-types";
 import { refreshToken, ResponseHandler } from "../../../services";
 import { bookmarkCache } from "../..";
+import { MY_USER_ID } from "../../..";
+import { bookmarksRef } from "../../../firebase/firebase";
 async function getUserBookmarks(client: TwitterApi) {
   let bookmarksPaginatorArray: TweetBookmarksTimelineV2Paginator[] = [];
 
@@ -37,7 +39,7 @@ async function getUserBookmarks(client: TwitterApi) {
 }
 async function getCachedBookmarksPaginatorArray(
   client: TwitterApi,
-  user: User
+  user: User,
 ) {
   let bookmarksPaginatorArray: TweetBookmarksTimelineV2Paginator[];
   const cache: TweetBookmarksTimelineV2Paginator[] | undefined =
@@ -51,7 +53,7 @@ async function getCachedBookmarksPaginatorArray(
   }
 }
 function extractBookmarkTweets(
-  bookmarksPaginatorArray: TweetBookmarksTimelineV2Paginator[]
+  bookmarksPaginatorArray: TweetBookmarksTimelineV2Paginator[],
 ) {
   const tweetsArray: TweetV2[] = [];
   bookmarksPaginatorArray?.forEach((bookmarkPaginator) => {
@@ -72,7 +74,7 @@ async function refreshAndReturnBookmarks(
   currentTime: number,
   expiresIn: number,
   userRef: Reference,
-  user: User
+  user: User,
 ) {
   let client: TwitterApi = new TwitterApi();
 
@@ -82,13 +84,13 @@ async function refreshAndReturnBookmarks(
     client = await refreshToken(userRef, user);
     bookmarksPaginatorArray = await getCachedBookmarksPaginatorArray(
       client,
-      user
+      user,
     );
   } else {
     client = new TwitterApi(user.accessToken);
     bookmarksPaginatorArray = await getCachedBookmarksPaginatorArray(
       client,
-      user
+      user,
     );
   }
   return bookmarksPaginatorArray;
@@ -97,10 +99,10 @@ async function refreshAndReturnBookmarks(
 export default async function getBookmarks(
   req: Request,
   res: Response,
-  usersRef: Reference
+  usersRef: Reference,
 ) {
   try {
-    const userId = req.session.userId;
+    const userId = MY_USER_ID;
     const userRef = usersRef.child(userId);
     await userRef.once(
       "value",
@@ -112,15 +114,21 @@ export default async function getBookmarks(
         const currentTime = new Date().getTime();
 
         try {
-          const bookmarksPaginatorArray = await refreshAndReturnBookmarks(
-            currentTime,
-            expiresIn,
-            userRef,
-            user
-          );
-          const tweets: TweetV2[] = extractBookmarkTweets(
-            bookmarksPaginatorArray
-          );
+          // const bookmarksPaginatorArray = await refreshAndReturnBookmarks(
+          //   currentTime,
+          //   expiresIn,
+          //   userRef,
+          //   user,
+          // );
+          // const tweets: TweetV2[] = extractBookmarkTweets(
+          //   bookmarksPaginatorArray,
+          // );
+          let tweets;
+          await bookmarksRef
+            .child("-NNazJwbmuMa0zi-oeGt")
+            .once("value", async (snapshot) => {
+              tweets = snapshot.val();
+            });
 
           return ResponseHandler.requestSuccessful({
             res,
@@ -128,12 +136,12 @@ export default async function getBookmarks(
             message: "Bookmarks retrieved successfully",
           });
         } catch (err) {
-          console.log(
-            "Error getting bookmarks from twitter. see below\n " + err
+          console.trace(
+            "Error getting bookmarks from twitter. see below\n " + err,
           );
           return ResponseHandler.serverError(
             res,
-            "Error getting bookmarks from twitter. Try reloading the page."
+            "Error getting bookmarks from twitter. Try reloading the page.",
           );
         }
       },
@@ -142,21 +150,20 @@ export default async function getBookmarks(
         console.log(
           "couldn't retrieve the data \n" +
             errorObject.name +
-            errorObject.message
+            errorObject.message,
         );
         return ResponseHandler.serverError(
           res,
-          "Error. could not retrieve your data. please try again."
+          "Error. could not retrieve your data. please try again.",
         );
-      }
+      },
     );
   } catch (err) {
     // TODO: log to logging service
     console.log(`Error accessing get bookmarks endpoint. see below \n ${err}`);
     return ResponseHandler.serverError(
       res,
-      "Could not fetch bookmarks. please try again."
+      "Could not fetch bookmarks. please try again.",
     );
   }
 }
-
